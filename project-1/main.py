@@ -1,6 +1,4 @@
 # Entry point to running the brute-force Subset Sum algorithm
-import random
-import numpy as np
 
 from subset_sum import brute_force_subset_sum
 
