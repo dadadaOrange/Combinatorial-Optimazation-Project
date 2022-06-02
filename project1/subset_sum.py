@@ -25,3 +25,19 @@ def brute_force_subset_sum(nums, target):
             return True
 
     return False
+
+
+# Greedily determines if there exists a subset whose elements add up to the given target. Is not optimal.
+def greedy_subset_sum(nums, target):
+    A = []
+    curr_sum = 0
+    nums.sort(reverse=True)
+    for num in nums:
+        if curr_sum + num > target:
+            break
+        curr_sum = curr_sum + num
+        A.append(num)
+
+    result = (curr_sum == target)
+
+    return result
