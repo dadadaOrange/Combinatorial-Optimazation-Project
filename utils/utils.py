@@ -63,7 +63,7 @@ def construct_results(path):
 
 def lists_target_dict():
     # list_dict: key = index, value = list
-    # target_dict: key = index, value = target
+    # target_dict: key = index, value = targets
     target_dict = {}
     list_dict = {}
     DEST = "../data/"
@@ -73,7 +73,7 @@ def lists_target_dict():
         res_lists = construct_lists(os.path.join(DEST, p))
         for item in res_lists:
             list_dict[key_index] = item
-            # randomly create a target
+            # randomly create a targets
             num = random.randrange(1, len(item))
             target = sum(random.sample(item, num)) + random.randint(min(item), max(item))
             target_dict[key_index] = target

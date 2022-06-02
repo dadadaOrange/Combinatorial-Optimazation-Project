@@ -1,6 +1,6 @@
 """
 The exhaustive algorithm will find all subset sum in input list. For each subset, check if the subset sum equals to
-target.
+targets.
 """
 from timeit import default_timer as timer
 import func_timeout

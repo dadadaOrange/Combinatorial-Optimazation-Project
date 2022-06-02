@@ -2,7 +2,7 @@ import numpy as np
 import os
 import random
 import csv
-from utils.utils import construct_lists, construct_targets, construct_results
+# from utils.utils import construct_lists, construct_targets, construct_results
 
 
 def hello():
@@ -35,18 +35,17 @@ def save_lists_target_result(list_size, lists_num, range_min, range_max, path):
 
     generated_lists = generate_lists(list_size, lists_num, range_min, range_max)
 
-
     with open(os.path.join(path, "lists.csv"), 'w') as f:
         write = csv.writer(f)
         for item in generated_lists:
             write.writerow(item)
-    # generate target and save in ...target.csv
+    # generate targets and save in ...targets.csv
     generated_target = []
     generated_result = []
     for item in generated_lists:
         """
-            90 % true target = sum(random.sample(list(item), num))
-            10 % false target = 3.14
+            90 % true targets = sum(random.sample(list(item), num))
+            10 % false targets = 3.14
         """
         percent = random.uniform(0, 1)
         if percent <= 0.8:

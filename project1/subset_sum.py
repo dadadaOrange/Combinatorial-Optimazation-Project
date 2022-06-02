@@ -15,7 +15,7 @@ def get_all_subset_sums(nums):
     return solution
 
 
-# Given a set of numbers and a target value, does there exist a subset whose elements add up to the given target?
+# Given a set of numbers and a targets value, does there exist a subset whose elements add up to the given targets?
 def brute_force_subset_sum(nums, target):
     if target == 0:
         return True
