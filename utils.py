@@ -9,10 +9,10 @@ def plot_results(sizes, times):
     y = times
     plt.xlabel('Instance size')
     # plt.ylabel('running time')
-    plt.ylabel('Success rate')
+    plt.ylabel('Time')
     plt.xticks(x)
     plt.plot(x, y)
-    plt.savefig('plots/size50_limit60.png')
+    plt.savefig('plots/exhaustive.png')
     plt.show()
 
 
