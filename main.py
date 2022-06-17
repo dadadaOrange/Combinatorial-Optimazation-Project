@@ -127,6 +127,7 @@ def process_result(files_paths):
     print("success rate :", success_rate)
     return sizes, ave_times
 
+
 def greedy_all(instance_paths):
     # Greedy
     results = []
@@ -155,6 +156,7 @@ def greedy_all(instance_paths):
 
     ## plot
     plot_results(ns[:100], success_rate[:100])
+
 
 if __name__ == "__main__":
     # Pass the argument
@@ -218,12 +220,18 @@ if __name__ == "__main__":
     # print("instance_paths", instance_paths)
     # new_list = [args.path + "/instances/" + x for x in instance_paths]
     # print("new_list", new_list)
-####################################################################################
+    ####################################################################################
     # res_paths = run_exhaustive(instance_paths, args.path, args.time_limit)
     # print("result_path", res_paths)
-    # sizes, times = process_result(res_paths)
-    # plot_results(sizes, times)
-####################################################################################
 
-    greedy_all(instance_paths)
+    # res_paths = ['data/group2/exhaustive/res_n_2_b_30_count_5.npz', 'data/group2/exhaustive/res_n_4_b_30_count_5.npz']
+    res_paths = ['data/group2/exhaustive/res_n_{}_b_30_count_5.npz'.format(x) for x in range(2, 73, 2)]
+
+
+    sizes, times = process_result(res_paths)
+    print(sizes, times)
+    plot_results(sizes, times)
+    ####################################################################################
+
+    # greedy_all(instance_paths)
     print("Code is done!")
