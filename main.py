@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 from data_generation import subset_sum_data
 from subset_algorithms import subset_sum_solver
 from utils import all_results_timer, save_results, plot_results
-
+import pickle
+from timeit import default_timer as timer
+import random
 
 def project1():
     # Pass the argument
@@ -127,7 +129,6 @@ def process_result(files_paths):
     print("success rate :", success_rate)
     return sizes, ave_times
 
-
 def greedy_all(instance_paths):
     # Greedy
     results = []
@@ -136,10 +137,11 @@ def greedy_all(instance_paths):
     index = 0
     ns = []
     success_rate = []
+    ratios = []
     for item in instance_paths:
         solver = subset_sum_solver(item)
         solver.read()
-        result = solver.greedy()
+        result, ratio = solver.greedy()
         for item in result:
             if item:
                 true_count += 1
@@ -147,16 +149,256 @@ def greedy_all(instance_paths):
                 false_count += 1
         results.append(result)
         ns.append(solver.n)
+        ratios.append(sum(ratio) / len(ratio))
+
         success_rate.append(sum(result) / len(result))
 
     print(ns)
+    print(ratios)
     print(success_rate)
     print("true", true_count)
     print("false", false_count)
 
     ## plot
     plot_results(ns[:100], success_rate[:100])
+    plot_results(ns[:100], ratios[:100])
 
+
+def generate_dat_run_ampl(instance_path, target_path):
+    with np.load(instance_path) as f:
+        arrays = f["arr_" + str(0)]
+        targets = f["arr_" + str(1)]
+        n = len(arrays[0])
+    print('loading. ')
+    # print('arrays', arrays)   # five arrays
+    print('target:', targets)
+    print('n', n)
+    # print(instance_path)
+    base = os.path.basename(instance_path)
+    # print('base', base)
+    base = base.split('.')
+    # print('split base', base)
+    base = base[0]
+
+
+    if not os.path.exists(target_path):
+        print('making folder. ')
+        os.makedirs(target_path)
+    for i in range(5):
+        cur_arr = arrays[i]
+        cur_target = targets[i]
+
+        ######### generate .dat
+        data_file_name = target_path + base + '_' + str(i) + '.dat'
+        fhandle = open(data_file_name, 'w')
+        # fhandle.write('abc, d '+ ';\n')
+        fhandle.write('param set_len = ' + str(n) + ';\n')
+        fhandle.write('param target_sum = ' + str(cur_target) + ';\n')
+        fhandle.write('param values := ')
+
+        for index, num in enumerate(cur_arr):
+            fhandle.write('[%s] %s ' % (index+1, num))
+
+        fhandle.write(';\n')
+        fhandle.close()
+        ######### generate .run  for lp
+        run_file_name = target_path + base + '_' + str(i) + '_lp' + '.run'
+        out_file_name = base + '_' + str(i) + '_lp' + '.out'
+
+        fhandle = open(run_file_name, 'w')
+        fhandle.write('model lp.mod;\n')
+
+        data_file_name_base = os.path.basename(data_file_name)
+        fhandle.write('data %s;\n' % data_file_name_base)
+        fhandle.write('\n')
+
+        fhandle.write('option solver cplex;\n')
+        fhandle.write("option cplex_options 'timelimit=60';\n")
+        fhandle.write("option cplex_options 'integrality=3e-07';\n")
+        fhandle.write('solve;\n')
+        fhandle.write('\n')
+
+        fhandle.write('display _solve_elapsed_time > %s;\n' % out_file_name)
+        fhandle.write('display calculated_sum > %s;\n' % out_file_name)
+        fhandle.write('display target_sum > %s;\n' % out_file_name)
+        fhandle.write('display set_len > %s;\n' % out_file_name)
+        fhandle.write('display x > %s;\n' % out_file_name)
+        fhandle.write('display values > %s;\n' % out_file_name)
+        fhandle.write('\n')
+        fhandle.close()
+
+        ######### generate .run
+        run_file_name = target_path + base + '_' + str(i) + '_ilp'+ '.run'
+        out_file_name = base + '_' + str(i) + '_ilp' + '.out'
+
+        fhandle = open(run_file_name, 'w')
+        fhandle.write('model ilp.mod;\n')
+
+        data_file_name_base = os.path.basename(data_file_name)
+        fhandle.write('data %s;\n' % data_file_name_base)
+        fhandle.write('\n')
+
+        fhandle.write('option solver cplex;\n')
+        fhandle.write("option cplex_options 'timelimit=60';\n")
+        fhandle.write("option cplex_options 'integrality=3e-07';\n")
+        fhandle.write('solve;\n')
+        fhandle.write('\n')
+
+        fhandle.write('display _solve_elapsed_time > %s;\n' % out_file_name)
+        fhandle.write('display calculated_sum > %s;\n' % out_file_name)
+        fhandle.write('display target_sum > %s;\n' % out_file_name)
+        fhandle.write('display set_len > %s;\n' % out_file_name)
+        fhandle.write('display x > %s;\n' % out_file_name)
+        fhandle.write('display values > %s;\n' % out_file_name)
+        fhandle.write('\n')
+        fhandle.close()
+
+
+
+
+    # with open(data_file_name) as f:
+    #     lines = f.readlines()
+    # print(lines)
+
+def process_out_single(path):
+    # print('processing file:', path)
+    run_time = 0
+    with open(path) as f:
+        lines = f.readlines()
+    # print(lines)
+    # print(len(lines))
+    i = 0
+    while i < len(lines):
+    # for line in lines:
+        line = lines[i]
+        # print(line)
+        s_list = line.split(' ')
+        # print(s_list)
+        if s_list[0][-1] == 'e':  # runtime: '_solve_elapsed_time'
+            # print('runtime:', s_list)
+            run_time = float(s_list[-1])
+        elif s_list[0][-1] == 'x': # solution: x [*] :=
+            # print('solution:', s_list)
+            solution = []
+            i += 1
+            while i < len(lines) and lines[i] != ';\n':
+                s_list = lines[i].split(' ')
+                solution.append(int(s_list[2]))
+                i += 1
+            # print(solution)
+            continue
+        elif s_list[0][-1] == 's': # values:
+            # print('values:', s_list)
+            values = []
+            i += 1
+            while i < len(lines) and lines[i] != ';\n':
+                s_list = lines[i].split(' ')
+                values.append(int(s_list[-1]))
+                i += 1
+            # print(values)
+        elif s_list[0][0] == 'c':
+            calculated_sum = int(s_list[-1])
+        elif s_list[0][0] == 't':
+            target_sum = int(s_list[-1])
+        elif s_list[0][0] == 's':
+            set_len = int(s_list[-1])
+
+        i += 1
+    return run_time, calculated_sum, target_sum, set_len, solution, values
+
+def local_search(paths, itr_max=1000000, time_limit=60, tolerance=500, strategy='steepest', ini='random'):
+    print('running.....', strategy, 'initial solution:', ini)
+    run_times = []
+    ns = []
+    ratios = []
+    itrs = []
+
+    for path in paths:
+        print(path)
+        # if strategy == 'steepest':
+        solver = subset_sum_solver(path, itr_max=itr_max, time_limit=time_limit, tolerance=tolerance)
+        # elif strategy == 'anneal':
+
+        solver.read()
+        greedy_ini = solver.greedy_5_approximate()
+
+        # result = solver.greedy()
+        ratio_total = 0
+        time_total = 0
+        itr_count_total = 0
+        for i, (single_instance, single_target) in enumerate(zip(solver.arrays, solver.targets)):
+            # print('processing single input. ', i)
+            # print(single_instance, single_target)
+            if ini =='random':
+                random_int = random.randrange(2, solver.n + 1)
+                initial_solution = random.sample(list(single_instance), random_int)
+            elif ini == 'greedy':
+                initial_solution = greedy_ini[i]
+            else:
+                raise ValueError
+            # print(ini)
+            if strategy == 'steepest':
+                residue, resulted_subset, running_time, itr_count = solver.steepest(single_instance, single_target, initial_solution)
+            elif strategy == 'anneal':
+                residue, resulted_subset, running_time, itr_count = solver.simulated_annealing(single_instance, single_target, initial_solution)
+            else:
+                raise ValueError
+            # print(residue, resulted_subset, running_time)
+
+            ratio = (single_target - residue) / single_target
+            ratio_total += ratio
+            time_total += running_time
+            itr_count_total += itr_count
+        ave_ratio = ratio_total / len(solver.targets)
+        ave_time = time_total / len(solver.targets)
+        ave_itr = itr_count_total / len(solver.targets)
+        ratios.append(ave_ratio)
+        run_times.append(ave_time)
+        ns.append(solver.n)
+        itrs.append(ave_itr)
+        # print(ratios)
+        # print(run_times)
+        # print(ns)
+    # save_results()
+    return ratios, run_times, ns, itrs
+
+
+def anneal_all(paths, itr_max=1000000, time_limit=60, tolerance=500):
+    print('simulated_annealing.....')
+    run_times = []
+    ns = []
+    ratios = []
+
+    for path in paths:
+        print(path)
+        solver = subset_sum_solver(path, itr_max=itr_max, time_limit=time_limit, tolerance=tolerance)
+        solver.read()
+        # result = solver.greedy()
+        ratio_total = 0
+        time_total = 0
+        for single_instance, single_target in zip(solver.arrays, solver.targets):
+            # print('processing single input. ')
+            # print(single_instance, single_target)
+            random_int = random.randrange(2, solver.n + 1)
+            # fixme ini using different strategy
+            ini = random.sample(list(single_instance), random_int)
+            # print(ini)
+            residue, resulted_subset, running_time = solver.simulated_annealing(single_instance, single_target, ini)
+            # print(residue, resulted_subset, running_time)
+
+            ratio = (single_target - residue) / single_target
+            ratio_total += ratio
+            time_total += running_time
+        ave_ratio = ratio_total / len(solver.targets)
+        ave_time = time_total / len(solver.targets)
+        ratios.append(ave_ratio)
+        run_times.append(ave_time)
+        ns.append(solver.n)
+        # print(ratios)
+        # print(run_times)
+        # print(ns)
+    # save_results()
+    return ratios, run_times, ns
 
 if __name__ == "__main__":
     # Pass the argument
@@ -173,14 +415,34 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path", type=str, default="data/group2", help="the path of instances"
     )
+
+    parser.add_argument(
+        "--experiment", type=str, default="steepest", help="the path of instances"
+    )
+
+    parser.add_argument(
+        "--ini", type=str, default="random", help="the path of instances"
+    )
+
     parser.add_argument(
         "--bit", type=int, default=2, help="bit length"
     )
+
+
+    parser.add_argument(
+        "--tolerance", type=int, default=50000, help="bit length"
+    )
+
+    parser.add_argument(
+        "--max_itr", type=int, default=500000000, help="bit length"
+    )
+
+    parser.add_argument(
+        "--time_limit", type=int, default=60, help="bit length"
+    )
+
     parser.add_argument(
         "--count", type=int, default=10, help="the count of instance created for each size"
-    )
-    parser.add_argument(
-        "--time_limit", type=int, default=60, help="the count of instance created for each size"
     )
 
     args = parser.parse_args()
@@ -212,26 +474,42 @@ if __name__ == "__main__":
                       'data/group2/instances/n_94_b_30_count_5.npz', 'data/group2/instances/n_96_b_30_count_5.npz',
                       'data/group2/instances/n_98_b_30_count_5.npz', 'data/group2/instances/n_100_b_30_count_5.npz']
 
-    # np.savez_compressed(args.path, instance_paths)
-    # read all path in a certain directory
-    # Run exhaustive algorithm and get the result path
-    # instance_paths = os.listdir(args.path + "/instances/")
-    # instance_paths.sort()
-    # print("instance_paths", instance_paths)
-    # new_list = [args.path + "/instances/" + x for x in instance_paths]
-    # print("new_list", new_list)
-    ####################################################################################
-    # res_paths = run_exhaustive(instance_paths, args.path, args.time_limit)
-    # print("result_path", res_paths)
 
-    # res_paths = ['data/group2/exhaustive/res_n_2_b_30_count_5.npz', 'data/group2/exhaustive/res_n_4_b_30_count_5.npz']
-    res_paths = ['data/group2/exhaustive/res_n_{}_b_30_count_5.npz'.format(x) for x in range(2, 73, 2)]
+################# steepest   ####################################################
+    if args.experiment == 'steepest':
+        # ratios, run_times, ns = local_search(instance_paths, strategy=args.experiment,
+        #                                      ini=args.ini, tolerance=args.tolerance)
+        ratios, run_times, ns, itrs = local_search(instance_paths, itr_max=args.max_itr, time_limit=args.time_limit, ini=args.ini, strategy=args.experiment, tolerance=args.tolerance)
 
+        save_path = args.experiment + '_' + args.ini + '_tolerance_' + str(args.tolerance) + '_time_limit_' + str(args.time_limit) + '.npz'
+        save_results(save_path, ratios, run_times, ns, itrs)
+        plot_results(ns, run_times, 'time')
+        plot_results(ns, ratios, 'ratio', y_range=True)
+        # anneal_all(instance_paths)
+    elif args.experiment == 'anneal':
+        ratios, run_times, ns, itrs = local_search(instance_paths, itr_max=args.max_itr, time_limit=args.time_limit, ini=args.ini, strategy=args.experiment, tolerance=args.tolerance)
 
-    sizes, times = process_result(res_paths)
-    print(sizes, times)
-    plot_results(sizes, times)
-    ####################################################################################
+        # ratios, run_times, ns = local_search(instance_paths, itr_max=args.max_itr, time_limit=args.time_limit, ini=args.ini, strategy=args.experiment, tolerance=args.tolerance)
+        # save_path = 'tt.npz' #
+        save_path = args.experiment + '_' + args.ini + '_tolerance_' + str(args.tolerance) + '_time_limit_' + str(args.time_limit) + '.npz'
 
-    # greedy_all(instance_paths)
+        # save_path = args.experiment + '_' + args.ini + '_tolerance_' + str(args.tolerance) + '.npz'
+        save_results(save_path, ratios, run_times, ns, itrs)
+        plot_results(ns, run_times, 'time')
+        plot_results(ns, itrs, 'number of iteration')
+        plot_results(ns, ratios, 'ratio', y_range=True)
+        # anneal_all(instance_paths)
+    elif args.experiment == 'test':
+        print(args.experiment)
+        instance_paths = ['data/group2/instances/n_2_b_30_count_5.npz', 'data/group2/instances/n_4_b_30_count_5.npz',  'data/group2/instances/n_6_b_30_count_5.npz']
+        test_path = instance_paths[2]
+        solver = subset_sum_solver(test_path)
+        solver.read()
+        print(solver.arrays[1])
+        ini = [448655659, 927737657]
+        instance = solver.arrays[1]
+        t = solver.targets[1]
+        result = solver.steepest(instance, t, ini)
+        print(result)
+
     print("Code is done!")

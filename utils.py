@@ -4,15 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_results(sizes, times):
+def plot_results(sizes, times, y_label='time', y_range=False):
     x = sizes
     y = times
     plt.xlabel('Instance size')
     # plt.ylabel('running time')
-    plt.ylabel('Time')
-    plt.xticks(x)
+    plt.ylabel(y_label)
+    # plt.xticks(x)
+    plt.xticks([i for i in range(2, 100, 4)])
+    # plt.yticks([i * 0.2 for i in range(0, 6)])
+    # plt.yticks([0.2, 0.6, 1.0, 1.2])
+    if y_range:
+        plt.ylim([0.975, 1.025])
     plt.plot(x, y)
-    plt.savefig('plots/exhaustive.png')
+    plt.savefig('plots/size50_limit60.png')
     plt.show()
 
 
@@ -52,5 +57,4 @@ def all_results_timer(algo, arrays, targets, time_limit):
 
 def save_results(path, *items):
     np.savez_compressed(path, items)
-    # np.savez_compressed(path, items, dtype=object)
-    # dtype = object
+
