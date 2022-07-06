@@ -1,0 +1,15 @@
+model ilp.mod;
+data n_36_b_30_count_5_1.dat;
+
+option solver cplex;
+option cplex_options 'timelimit=60';
+option cplex_options 'integrality=3e-07';
+solve;
+
+display _solve_elapsed_time > n_36_b_30_count_5_1_ilp.out;
+display calculated_sum > n_36_b_30_count_5_1_ilp.out;
+display target_sum > n_36_b_30_count_5_1_ilp.out;
+display set_len > n_36_b_30_count_5_1_ilp.out;
+display x > n_36_b_30_count_5_1_ilp.out;
+display values > n_36_b_30_count_5_1_ilp.out;
+

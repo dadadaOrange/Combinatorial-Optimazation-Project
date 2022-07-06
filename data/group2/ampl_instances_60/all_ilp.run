@@ -1,0 +1,31 @@
+reset; 
+model ilp.mod;
+
+set instances := 2..100 by 2;  
+
+# set instances = {4, 6}; 
+set num = {0, 1, 2, 3, 4}; 
+
+for {i in instances} {  
+for {j in num} {
+reset data; 
+
+data (" n_" & i & "_b_30_count_5_" & j & ".dat");
+
+
+option solver cplex;
+option cplex_options 'timelimit=60';
+option cplex_options 'integrality=3e-07';
+solve;
+
+
+display _solve_elapsed_time > ("n_" & i & "_b_30_count_5_" & j & "_ilp.out");
+display calculated_sum > ("n_" & i & "_b_30_count_5_" & j & "_ilp.out");
+display target_sum > ("n_" & i & "_b_30_count_5_" & j & "_ilp.out");
+display set_len > ("n_" & i & "_b_30_count_5_" & j & "_ilp.out");
+display x > ("n_" & i & "_b_30_count_5_" & j & "_ilp.out");
+display values > ("n_" & i & "_b_30_count_5_" & j & "_ilp.out");
+
+}
+
+} 
