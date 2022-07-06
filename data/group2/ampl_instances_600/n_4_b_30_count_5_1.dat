@@ -1,0 +1,3 @@
+param set_len = 4;
+param target_sum = 582183506;
+param values := [1] 24753436 [2] 202136756 [3] 557430070 [4] 353117305 ;

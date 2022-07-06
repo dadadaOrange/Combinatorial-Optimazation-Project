@@ -1,0 +1,18 @@
+_solve_elapsed_time = 0
+
+calculated_sum = 481727000
+
+target_sum = 481727000
+
+set_len = 2
+
+x [*] :=
+1  0
+2  1
+;
+
+values [*] :=
+1  1039480000
+2   481727000
+;
+
